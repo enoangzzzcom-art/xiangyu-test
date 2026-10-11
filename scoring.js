@@ -15,18 +15,20 @@
     }
     return answerOption(id,a)?.score;
   }
-  const importance={appearance:{height:.3,look:.45,style:.25},career:{job:.35,stable:.45,schedule:.2},assets:{savings:.3,home:.35,debt:.3,car:.05},family:{parents:.25,familyDebt:.3,support:.15,familyAtmosphere:.3},relationship:{emotion:.4,communication:.35,lifestyle:.25}};
+  const importance={appearance:{height:.3,look:.45,style:.25},career:{job:.35,stable:.45,schedule:.2},assets:{savings:.3,home:.35,debt:.3,car:.05},family:{parents:.25,familyDebt:.3,support:.15,familyAtmosphere:.3},relationship:{emotion:.35,communication:.3,lifestyle:.2,conflictRepair:.15}};
   function validate(a){
     const errors=[];
     for(const q of data.questions){
       const x=a[q.id];
-      if(q.type==='number'){if(!Number.isFinite(x)||x<q.min||x>q.max||!Number.isInteger(x))errors.push({id:q.id,message:`请输入${q.min}—${q.max}之间的整数`});}
+      if(q.type==='number'){if(q.optional&&(x===null||x===undefined))continue;const step=q.step||1;if(!Number.isFinite(x)||x<q.min||x>q.max||Math.abs(x/step-Math.round(x/step))>1e-7)errors.push({id:q.id,message:`请输入${q.min}—${q.max}之间的${step===1?'整数':'数值（最多1位小数）'}`});}
       else if(q.type==='range'){if(!Array.isArray(x)||x.length!==2||x.some(n=>!Number.isInteger(n)||n<q.min||n>q.max)||x[0]>x[1])errors.push({id:q.id,message:'请填写有效的年龄范围，下限不能大于上限'});}
       else if(!Number.isInteger(x)||!q.options[x])errors.push({id:q.id,message:'请选择一个选项'});
     }
     if(errors.length)return errors;
     for(const [floor,ideal] of [['incomeFloor','incomeIdeal'],['heightFloor','heightIdeal'],['eduFloor','eduIdeal'],['homeFloor','homeIdeal']])if(value(floor,a)>value(ideal,a))errors.push({id:floor,message:'底线要求不能高于理想要求，请检查这两项'});
     if(a.ageFloor[0]>a.ageIdeal[0]||a.ageFloor[1]<a.ageIdeal[1])errors.push({id:'ageFloor',message:'可接受年龄范围应包含理想年龄范围'});
+    const accepted=[[0,1,2],[0],[0,1],[0,2]];
+    if(!accepted[value('maritalIdeal',a)].every(x=>accepted[value('maritalFloor',a)].includes(x)))errors.push({id:'maritalFloor',message:'可接受婚姻经历应包含理想范围'});
     return errors;
   }
   function compute(a,weights){
@@ -47,6 +49,10 @@
     if(value('homeIdeal',a)>=3&&value('home',a)<3)gaps.push({name:'住房期待',text:'理想型要求个人名下有房，而你的当前住房安排不同。见面时把产权、房贷和共同投入方式问清。'});
     if(value('cityPref',a)==='same')gaps.push({name:'城市范围',text:'只接受同城会限制接触范围。优先使用本地渠道；本版没有真实候选人数据库，不估算剩余人数。'});
     if(value('carePref',a)===0&&itemScore('care',a)<=60)gaps.push({name:'照护安排',text:'你希望对方照护责任较轻，而自己已有固定照护任务。提前沟通分工，比只看家庭标签更有帮助。'});
+
+    if(value('smoke',a)!==0&&value('smokePref',a)===0)gaps.push({name:'吸烟边界',text:'你有吸烟或戒烟中的习惯，同时希望对方不吸烟。提前说明现状，并讨论共同居所的场所与边界。'});
+    if(value('pet',a)===0&&value('petPref',a)===2)gaps.push({name:'宠物安排',text:'你目前有宠物，同时希望共同居所不养宠物。先梳理自己的居住安排，再与对方讨论照料责任。'});
+    if(value('livingParents',a)===3&&value('livingPref',a)===0)gaps.push({name:'居住与照护',text:'你目前因照护需要就近居住，同时希望婚后独立生活。讨论住所距离、照护时间和支援方式。'});
     const narrow=[value('incomeFloor',a)>=15000,value('heightFloor',a)>=180,value('eduFloor',a)>=3,value('homeFloor',a)>=3,value('cityPref',a)==='same',value('carePref',a)===0].filter(Boolean).length;
     const tier=score>=85?'综合条件较突出':score>=70?'综合条件较稳健':score>=55?'条件有亮点，也有待补齐项':'建议优先梳理现实基础';
     return {score,rows,strengths,focus,gaps,narrow,tier,weightSum:sum,version:data.version};
@@ -67,10 +73,19 @@
       ['职业方向',ideal?'工作与收入可持续，有清晰生活规划':'能维持基本生活，职业安排如实说明'],
       ['城市',city],
       ['外形要求',label('height'+suffix,a)+'；'+(ideal?'符合你的审美，形象得体':'有眼缘，基本整洁得体')],
+      ['体型偏好',ideal?label('bodyIdeal',a):value('bodyFloor',a)===1?label('bodyIdeal',a):label('bodyFloor',a)],
+      ['婚姻经历',label('marital'+suffix,a)],
+      ['已有子女',label('childPref',a)],
+      ['吸烟 / 饮酒',label('smokePref',a)+'；'+label('drinkPref',a)],
+      ['婚后居住',label('livingPref',a)],
+      ['家务与育儿',label('houseworkPref',a)],
+      ['财务沟通',label('budgetPref',a)],
+      ['宠物安排',label('petPref',a)],
       ['照护责任',care],
       ['婚育计划',future+'；'+kids]
     ];
   }
-  const api={validate,compute,profile,itemScore,label,value};root.XiangyuScore=api;
+  function display(id,a){const q=data.questions.find(q=>q.id===id);if(q.type==='number')return a[id]===null||a[id]===undefined?'暂不填写':a[id]+q.unit;if(q.type==='range')return a[id].join('—')+q.unit;return label(id,a);}
+  const api={validate,compute,profile,itemScore,label,value,display};root.XiangyuScore=api;
   if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
