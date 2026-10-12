@@ -141,6 +141,34 @@
       ]
     },
     {
+      "id": "style",
+      "group": 0,
+      "title": "你平时的穿搭和形象更接近哪种？",
+      "description": "个人风格也可以成为别人记住你的亮点。",
+      "options": [
+        {
+          "label": "较少打理，随意为主",
+          "score": 45,
+          "value": 45
+        },
+        {
+          "label": "基本整洁得体",
+          "score": 70,
+          "value": 70
+        },
+        {
+          "label": "重视穿着与仪态",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "有稳定的个人风格",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
       "id": "edu",
       "group": 1,
       "title": "你的最高学历",
@@ -367,10 +395,122 @@
       ]
     },
     {
+      "id": "stable",
+      "group": 1,
+      "title": "你现在的收入状态更接近哪种？",
+      "description": "收入多少之外，也看看生活的稳定感。",
+      "options": [
+        {
+          "label": "波动较大，暂难预测",
+          "score": 35,
+          "value": 35
+        },
+        {
+          "label": "有一定波动，基本能覆盖生活",
+          "score": 60,
+          "value": 60
+        },
+        {
+          "label": "相对稳定，有应急缓冲",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "稳定，且有多元收入来源",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "familyAtmosphere",
+      "group": 1,
+      "title": "在恋爱选择上，你的家庭边界如何？",
+      "description": "看你能否按自己的意愿作决定。",
+      "options": [
+        {
+          "label": "尊重我的决定，能沟通",
+          "score": 95,
+          "value": 95
+        },
+        {
+          "label": "有意见，但最后能协商",
+          "score": 80,
+          "value": 80
+        },
+        {
+          "label": "经常干预，沟通有难度",
+          "score": 50,
+          "value": 50
+        },
+        {
+          "label": "强烈干预，边界难以建立",
+          "score": 25,
+          "value": 25
+        }
+      ]
+    },
+    {
+      "id": "emotion",
+      "group": 1,
+      "title": "两个人意见不合时，你更常怎样处理？",
+      "description": "用真实相处中的反应选择，不是人格诊断。",
+      "options": [
+        {
+          "label": "容易失控，事后也较难修复",
+          "score": 30,
+          "value": 30
+        },
+        {
+          "label": "容易激动，但愿意回头沟通",
+          "score": 55,
+          "value": 55
+        },
+        {
+          "label": "能暂停并重新沟通",
+          "score": 80,
+          "value": 80
+        },
+        {
+          "label": "多数时候能稳定表达与解决",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "lifestyle",
+      "group": 1,
+      "title": "你的日常消费和生活节奏更接近哪种？",
+      "description": "轻松、有安排，也可以是很加分的个人特点。",
+      "options": [
+        {
+          "label": "经常超支，生活安排较混乱",
+          "score": 35,
+          "value": 35
+        },
+        {
+          "label": "偶尔超支，仍在调整",
+          "score": 60,
+          "value": 60
+        },
+        {
+          "label": "支出可控，生活较规律",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "有规划，也能灵活协商",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
       "id": "ageIdeal",
       "group": 2,
-      "title": "理想型：你希望对方的年龄范围",
-      "description": "这里填写你的偏好，不由个人分数推算。",
+      "title": "你希望对象的年龄范围",
+      "description": "填一个你更有好感的年龄区间即可。",
       "options": null,
       "type": "range",
       "min": 18,
@@ -382,68 +522,10 @@
       "unit": "岁"
     },
     {
-      "id": "ageFloor",
-      "group": 2,
-      "title": "底线型：你可接受的年龄范围",
-      "description": "通常比理想范围更宽；可与理想范围相同。",
-      "options": null,
-      "type": "range",
-      "min": 18,
-      "max": 80,
-      "default": [
-        25,
-        36
-      ],
-      "unit": "岁"
-    },
-    {
       "id": "incomeIdeal",
       "group": 2,
-      "title": "理想型：对方月均税后收入",
-      "description": "与自己的收入采用相同口径。",
-      "options": [
-        {
-          "label": "不设收入门槛",
-          "score": null,
-          "value": 0
-        },
-        {
-          "label": "5千以上",
-          "score": null,
-          "value": 5000
-        },
-        {
-          "label": "8千以上",
-          "score": null,
-          "value": 8000
-        },
-        {
-          "label": "1万以上",
-          "score": null,
-          "value": 10000
-        },
-        {
-          "label": "1.5万以上",
-          "score": null,
-          "value": 15000
-        },
-        {
-          "label": "2万以上",
-          "score": null,
-          "value": 20000
-        },
-        {
-          "label": "3万以上",
-          "score": null,
-          "value": 30000
-        }
-      ]
-    },
-    {
-      "id": "incomeFloor",
-      "group": 2,
-      "title": "底线型：对方最低收入要求",
-      "description": "填写真实可接受的门槛，不代表建议你降低要求。",
+      "title": "你希望对象的月收入条件",
+      "description": "只选一次；用于理想对象画像，不影响你的亮点分。",
       "options": [
         {
           "label": "不设收入门槛",
@@ -485,56 +567,8 @@
     {
       "id": "heightIdeal",
       "group": 2,
-      "title": "理想型：对方身高要求",
-      "description": "只用于对象画像与条件跨度分析。",
-      "options": [
-        {
-          "label": "不设身高门槛",
-          "score": null,
-          "value": 0
-        },
-        {
-          "label": "155cm以上",
-          "score": null,
-          "value": 155
-        },
-        {
-          "label": "160cm以上",
-          "score": null,
-          "value": 160
-        },
-        {
-          "label": "165cm以上",
-          "score": null,
-          "value": 165
-        },
-        {
-          "label": "170cm以上",
-          "score": null,
-          "value": 170
-        },
-        {
-          "label": "175cm以上",
-          "score": null,
-          "value": 175
-        },
-        {
-          "label": "180cm以上",
-          "score": null,
-          "value": 180
-        },
-        {
-          "label": "185cm以上",
-          "score": null,
-          "value": 185
-        }
-      ]
-    },
-    {
-      "id": "heightFloor",
-      "group": 2,
-      "title": "底线型：对方最低身高要求",
-      "description": "可以选择不设门槛。",
+      "title": "你希望对象的身高条件",
+      "description": "偏好可以保留，也可以选择不设门槛。",
       "options": [
         {
           "label": "不设身高门槛",
@@ -581,46 +615,8 @@
     {
       "id": "eduIdeal",
       "group": 2,
-      "title": "理想型：对方学历要求",
-      "description": "不根据你的学历强制设定。",
-      "options": [
-        {
-          "label": "不设学历门槛",
-          "score": null,
-          "value": -1
-        },
-        {
-          "label": "高中 / 中专及以下及以上",
-          "score": null,
-          "value": 0
-        },
-        {
-          "label": "大专及以上",
-          "score": null,
-          "value": 1
-        },
-        {
-          "label": "本科及以上",
-          "score": null,
-          "value": 2
-        },
-        {
-          "label": "硕士及以上",
-          "score": null,
-          "value": 3
-        },
-        {
-          "label": "博士及以上",
-          "score": null,
-          "value": 4
-        }
-      ]
-    },
-    {
-      "id": "eduFloor",
-      "group": 2,
-      "title": "底线型：对方最低学历要求",
-      "description": "可以选择不设门槛。",
+      "title": "你希望对象的学历条件",
+      "description": "只选一次；实际相处还要看表达与经历。",
       "options": [
         {
           "label": "不设学历门槛",
@@ -657,41 +653,8 @@
     {
       "id": "homeIdeal",
       "group": 2,
-      "title": "理想型：对方住房条件",
-      "description": "共同购房与租住均可以作为有效选择。",
-      "options": [
-        {
-          "label": "不设住房门槛",
-          "score": null,
-          "value": 0
-        },
-        {
-          "label": "能独立承担租住",
-          "score": null,
-          "value": 1
-        },
-        {
-          "label": "有共同购房计划",
-          "score": null,
-          "value": 2
-        },
-        {
-          "label": "有房，可接受合理房贷",
-          "score": null,
-          "value": 3
-        },
-        {
-          "label": "有房且无房贷",
-          "score": null,
-          "value": 4
-        }
-      ]
-    },
-    {
-      "id": "homeFloor",
-      "group": 2,
-      "title": "底线型：对方最低住房条件",
-      "description": "不会推断对方的房产价格。",
+      "title": "你希望对象的住房安排",
+      "description": "选择你更期待的共同生活起点。",
       "options": [
         {
           "label": "不设住房门槛",
@@ -728,7 +691,8 @@
       "weight": 15,
       "keys": [
         "height",
-        "look"
+        "look",
+        "style"
       ]
     },
     {
@@ -744,7 +708,8 @@
       "name": "事业潜力",
       "weight": 10,
       "keys": [
-        "job"
+        "job",
+        "stable"
       ]
     },
     {
@@ -769,7 +734,8 @@
       "name": "家庭支持",
       "weight": 10,
       "keys": [
-        "support"
+        "support",
+        "familyAtmosphere"
       ]
     },
     {
@@ -777,14 +743,16 @@
       "name": "相处魅力",
       "weight": 20,
       "keys": [
-        "communication"
+        "communication",
+        "emotion",
+        "lifestyle"
       ]
     }
   ],
   "groups": [
     "基础名片",
-    "实力与魅力",
-    "理想与底线"
+    "实力与相处",
+    "我的理想对象"
   ],
-  "version": "3.0.0"
+  "version": "3.1.0"
 };root.XiangyuData=data;if(typeof module!=="undefined")module.exports=data;})(typeof window!=="undefined"?window:globalThis);
