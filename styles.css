@@ -69,3 +69,5 @@ body{background:radial-gradient(ellipse at 15% 12%,#f5edf6,transparent 36%),radi
 @media print{.quiz-cloud,.quiz-cloud-star,#motion-toggle{display:none!important}}
 
 @media(max-width:600px){.quiz-cloud-left{left:-15px}.quiz-cloud-right{right:-8px}}
+.quiz-cloud-left{width:140px;left:-50px;top:-30px}
+@media(max-width:600px){.quiz-cloud-left{width:115px;left:-15px;top:-18px}}
