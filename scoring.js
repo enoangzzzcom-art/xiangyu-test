@@ -1,91 +1,10 @@
 (function(root){
-  const data=root.XiangyuData||(typeof require!=='undefined'?require('./questions.js'):null);
-  const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
-  const answerOption=(id,a)=>{const q=data.questions.find(q=>q.id===id);return q?.options?.[a[id]];};
-  const value=(id,a)=>answerOption(id,a)?.value;
-  const label=(id,a)=>answerOption(id,a)?.label||'未填写';
-  function itemScore(id,a){
-    if(id==='height'){
-      const ref={female:165,male:175,other:170}[value('gender',a)]||170;
-      return Math.round(clamp(75+(a.height-ref)*2,35,95));
-    }
-    if(id==='income'){
-      const ratios={high:1,middle:1.1,normal:1.2,county:1.3};
-      return Math.round(clamp(answerOption(id,a).score*(ratios[value('city',a)]||1),0,100));
-    }
-    return answerOption(id,a)?.score;
-  }
-  const importance={appearance:{height:.3,look:.45,style:.25},career:{job:.35,stable:.45,schedule:.2},assets:{savings:.3,home:.35,debt:.3,car:.05},family:{parents:.25,familyDebt:.3,support:.15,familyAtmosphere:.3},relationship:{emotion:.35,communication:.3,lifestyle:.2,conflictRepair:.15}};
-  function validate(a){
-    const errors=[];
-    for(const q of data.questions){
-      const x=a[q.id];
-      if(q.type==='number'){if(q.optional&&(x===null||x===undefined))continue;const step=q.step||1;if(!Number.isFinite(x)||x<q.min||x>q.max||Math.abs(x/step-Math.round(x/step))>1e-7)errors.push({id:q.id,message:`请输入${q.min}—${q.max}之间的${step===1?'整数':'数值（最多1位小数）'}`});}
-      else if(q.type==='range'){if(!Array.isArray(x)||x.length!==2||x.some(n=>!Number.isInteger(n)||n<q.min||n>q.max)||x[0]>x[1])errors.push({id:q.id,message:'请填写有效的年龄范围，下限不能大于上限'});}
-      else if(!Number.isInteger(x)||!q.options[x])errors.push({id:q.id,message:'请选择一个选项'});
-    }
-    if(errors.length)return errors;
-    for(const [floor,ideal] of [['incomeFloor','incomeIdeal'],['heightFloor','heightIdeal'],['eduFloor','eduIdeal'],['homeFloor','homeIdeal']])if(value(floor,a)>value(ideal,a))errors.push({id:floor,message:'底线要求不能高于理想要求，请检查这两项'});
-    if(a.ageFloor[0]>a.ageIdeal[0]||a.ageFloor[1]<a.ageIdeal[1])errors.push({id:'ageFloor',message:'可接受年龄范围应包含理想年龄范围'});
-    const accepted=[[0,1,2],[0],[0,1],[0,2]];
-    if(!accepted[value('maritalIdeal',a)].every(x=>accepted[value('maritalFloor',a)].includes(x)))errors.push({id:'maritalFloor',message:'可接受婚姻经历应包含理想范围'});
-    return errors;
-  }
-  function compute(a,weights){
-    const errors=validate(a);if(errors.length)throw new Error(errors[0].message);
-    const rows=data.dimensions.map(d=>{
-      const items=d.keys.map(id=>({id,name:data.questions.find(q=>q.id===id).title,score:itemScore(id,a)}));
-      const score=Math.round(items.reduce((s,i)=>s+i.score*(importance[d.id]?.[i.id]||1/d.keys.length),0));
-      return {...d,items,score,weight:weights?.[d.id]??d.weight};
-    });
-    const sum=rows.reduce((s,d)=>s+d.weight,0);if(sum<=0)throw new Error('至少保留一项非零权重');
-    const score=Math.round(rows.reduce((s,d)=>s+d.score*d.weight,0)/sum);
-    const ranked=[...rows].sort((a,b)=>b.score-a.score);
-    const strengths=ranked.slice(0,3);const focus=[...ranked].reverse().slice(0,3);
-    const gaps=[];
-    const ownIncome=value('income',a);
-    if(value('incomeIdeal',a)>ownIncome*1.5)gaps.push({name:'收入跨度',text:'理想收入门槛高于你当前收入档的演示中点约1.5倍。可保留这个偏好，并明确你能提供的共同生活价值；这不是匹配人数预测。'});
-    if(value('eduIdeal',a)>value('edu',a))gaps.push({name:'学历跨度',text:'你期待对方的学历高于自己的当前学历。可以继续保留，建议同时看专业、工作与沟通是否契合。'});
-    if(value('homeIdeal',a)>=3&&value('home',a)<3)gaps.push({name:'住房期待',text:'理想型要求个人名下有房，而你的当前住房安排不同。见面时把产权、房贷和共同投入方式问清。'});
-    if(value('cityPref',a)==='same')gaps.push({name:'城市范围',text:'只接受同城会限制接触范围。优先使用本地渠道；本版没有真实候选人数据库，不估算剩余人数。'});
-    if(value('carePref',a)===0&&itemScore('care',a)<=60)gaps.push({name:'照护安排',text:'你希望对方照护责任较轻，而自己已有固定照护任务。提前沟通分工，比只看家庭标签更有帮助。'});
-
-    if(value('smoke',a)!==0&&value('smokePref',a)===0)gaps.push({name:'吸烟边界',text:'你有吸烟或戒烟中的习惯，同时希望对方不吸烟。提前说明现状，并讨论共同居所的场所与边界。'});
-    if(value('pet',a)===0&&value('petPref',a)===2)gaps.push({name:'宠物安排',text:'你目前有宠物，同时希望共同居所不养宠物。先梳理自己的居住安排，再与对方讨论照料责任。'});
-    if(value('livingParents',a)===3&&value('livingPref',a)===0)gaps.push({name:'居住与照护',text:'你目前因照护需要就近居住，同时希望婚后独立生活。讨论住所距离、照护时间和支援方式。'});
-    const narrow=[value('incomeFloor',a)>=15000,value('heightFloor',a)>=180,value('eduFloor',a)>=3,value('homeFloor',a)>=3,value('cityPref',a)==='same',value('carePref',a)===0].filter(Boolean).length;
-    const tier=score>=85?'综合条件较突出':score>=70?'综合条件较稳健':score>=55?'条件有亮点，也有待补齐项':'建议优先梳理现实基础';
-    return {score,rows,strengths,focus,gaps,narrow,tier,weightSum:sum,version:data.version};
-  }
-  function profile(a,kind){
-    const ideal=kind==='ideal', suffix=ideal?'Ideal':'Floor';
-    const age=a['age'+suffix];
-    const city={same:'同城，长期生活地点一致',plan:'可短期异地，有明确同城计划',flex:'城市可协商，先确认共同生活安排'}[value('cityPref',a)];
-    const care=['家庭照护责任较轻','中等照护责任可接受，分工明确','可接受较多照护责任，安排透明'][value('carePref',a)];
-    const future={soon:'有1年内结婚的意愿，节奏一致',later:'接受1—3年婚姻规划',slow:'愿意认真交往，不催促结婚',none:'尊重不进入婚姻的选择',unsure:'愿意一起讨论婚恋计划'}[value('future',a)];
-    const kids={yes:'希望有孩子，时间与分工需协商',no:'不计划生育，双方想法一致',unsure:'生育想法可讨论，不提前承诺'}[value('kids',a)];
-    return [
-      ['年龄区间',age[0]+'—'+age[1]+'岁'],
-      ['月收入参考',label('income'+suffix,a)],
-      ['资产 / 房产',label('home'+suffix,a)],
-      ['家庭背景',ideal?'生活保障与家庭责任清楚，边界可协商':'家庭情况如实说明，责任与支出可讨论'],
-      ['学历要求',label('edu'+suffix,a)],
-      ['职业方向',ideal?'工作与收入可持续，有清晰生活规划':'能维持基本生活，职业安排如实说明'],
-      ['城市',city],
-      ['外形要求',label('height'+suffix,a)+'；'+(ideal?'符合你的审美，形象得体':'有眼缘，基本整洁得体')],
-      ['体型偏好',ideal?label('bodyIdeal',a):value('bodyFloor',a)===1?label('bodyIdeal',a):label('bodyFloor',a)],
-      ['婚姻经历',label('marital'+suffix,a)],
-      ['已有子女',label('childPref',a)],
-      ['吸烟 / 饮酒',label('smokePref',a)+'；'+label('drinkPref',a)],
-      ['婚后居住',label('livingPref',a)],
-      ['家务与育儿',label('houseworkPref',a)],
-      ['财务沟通',label('budgetPref',a)],
-      ['宠物安排',label('petPref',a)],
-      ['照护责任',care],
-      ['婚育计划',future+'；'+kids]
-    ];
-  }
-  function display(id,a){const q=data.questions.find(q=>q.id===id);if(q.type==='number')return a[id]===null||a[id]===undefined?'暂不填写':a[id]+q.unit;if(q.type==='range')return a[id].join('—')+q.unit;return label(id,a);}
-  const api={validate,compute,profile,itemScore,label,value,display};root.XiangyuScore=api;
-  if(typeof module!=='undefined')module.exports=api;
+ const data=root.XiangyuData||(typeof require!=='undefined'?require('./questions.js'):null);const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));const option=(id,a)=>data.questions.find(q=>q.id===id)?.options?.[a[id]];const value=(id,a)=>option(id,a)?.value;const label=(id,a)=>option(id,a)?.label||'未填写';
+ function validate(a){const e=[];for(const q of data.questions){const x=a[q.id];if(q.type==='number'){if(q.optional&&(x===null||x===undefined))continue;const step=q.step||1;if(!Number.isFinite(x)||x<q.min||x>q.max||Math.abs(x/step-Math.round(x/step))>1e-7)e.push({id:q.id,message:`请输入${q.min}—${q.max}之间的${step===1?'整数':'数值（最多1位小数）'}`});}else if(q.type==='range'){if(!Array.isArray(x)||x.length!==2||x.some(n=>!Number.isInteger(n)||n<q.min||n>q.max)||x[0]>x[1])e.push({id:q.id,message:'请填写有效年龄区间'});}else if(!Number.isInteger(x)||!q.options[x])e.push({id:q.id,message:'请选择一个选项'});}if(e.length)return e;for(const [f,i] of [['incomeFloor','incomeIdeal'],['heightFloor','heightIdeal'],['eduFloor','eduIdeal'],['homeFloor','homeIdeal']])if(value(f,a)>value(i,a))e.push({id:f,message:'最低可接受条件不能高于理想条件'});if(a.ageFloor[0]>a.ageIdeal[0]||a.ageFloor[1]<a.ageIdeal[1])e.push({id:'ageFloor',message:'可接受年龄范围应包含理想范围'});return e;}
+ function raw(id,a){if(id==='height'){const ref={female:165,male:175,other:170}[value('gender',a)]||170;return clamp(75+(a.height-ref)*2,35,95);}if(id==='income')return clamp(option(id,a).score*({high:1,middle:1.1,normal:1.2,county:1.3}[value('city',a)]||1),0,100);return option(id,a)?.score;}
+ const tags={appearance:'自带眼缘感',education:'有知识也有想法',career:'认真生活的行动派',income:'独立生活有底气',assets:'把日子过得踏实',family:'被支持的幸福感',relationship:'沟通舒服有分寸'};
+ function compute(a,weights){const e=validate(a);if(e.length)throw Error(e[0].message);const rows=data.dimensions.map(d=>{const items=d.keys.map(id=>({id,name:data.questions.find(q=>q.id===id).title,score:Math.round(70+.28*clamp(raw(id,a),0,100))}));return {...d,items,score:Math.round(items.reduce((s,i)=>s+i.score,0)/items.length),weight:weights?.[d.id]??d.weight};});if(rows.some(d=>!Number.isFinite(d.weight)||d.weight<0||d.weight>100))throw Error('权重应为0—100');const sum=rows.reduce((s,d)=>s+d.weight,0);if(!sum)throw Error('至少保留一项非零权重');const score=Math.round(rows.reduce((s,d)=>s+d.score*d.weight,0)/sum);const ranked=[...rows].sort((a,b)=>b.score-a.score);return {score,rows,strengths:ranked.slice(0,3),focus:ranked.slice(-3).reverse(),tags:ranked.slice(0,3).map(d=>tags[d.id]),gaps:[],narrow:0,tier:score>=94?'实力与魅力双在线':score>=88?'越了解，越心动':score>=82?'认真生活，自带光芒':'你的闪光点，值得被看见',weightSum:sum,version:data.version};}
+ function profile(a,kind){const s=kind==='ideal'?'Ideal':'Floor';return [['年龄区间',a['age'+s][0]+'—'+a['age'+s][1]+'岁'],['月收入参考',label('income'+s,a)],['外形身高',label('height'+s,a)],['学历要求',label('edu'+s,a)],['住房安排',label('home'+s,a)]];}
+ function display(id,a){const q=data.questions.find(q=>q.id===id);if(!q)return '未填写';if(q.type==='number')return a[id]===null||a[id]===undefined?'暂不填写':a[id]+q.unit;if(q.type==='range')return a[id]?.join('—')+q.unit;return label(id,a);}
+ const api={validate,compute,profile,display,label,value};root.XiangyuScore=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

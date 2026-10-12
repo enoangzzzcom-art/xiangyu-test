@@ -1,111 +1,790 @@
-(function(root){
-  const opt=(label,score,value)=>({label,score,value:value===undefined?score:value});
-  const q=(id,group,title,description,options,extra={})=>({id,group,title,description,options,...extra});
-  const income=[opt('5千以下',35,3500),opt('5千—8千',50,6500),opt('8千—1.2万',65,10000),opt('1.2万—2万',80,16000),opt('2万—3万',90,25000),opt('3万以上',100,40000)];
-  const edu=[opt('高中 / 中专及以下',40,0),opt('大专',55,1),opt('本科',75,2),opt('硕士',90,3),opt('博士',100,4)];
-  const pIncome=[opt('不设收入门槛',null,0),opt('5千以上',null,5000),opt('8千以上',null,8000),opt('1万以上',null,10000),opt('1.5万以上',null,15000),opt('2万以上',null,20000),opt('3万以上',null,30000)];
-  const pEdu=[opt('不设学历门槛',null,-1),...edu.map(o=>({...o,label:o.label+'及以上',score:null}))];
-  const pHeight=[opt('不设身高门槛',null,0),... [155,160,165,170,175,180,185].map(n=>opt(n+'cm以上',null,n))];
-  const pHome=[opt('不设住房门槛',null,0),opt('能独立承担租住',null,1),opt('有共同购房计划',null,2),opt('有房，可接受合理房贷',null,3),opt('有房且无房贷',null,4)];
-  const questions=[
-    q('gender',0,'你的性别','用于个人画像，不参与加减分。',[opt('女性',null,'female'),opt('男性',null,'male'),opt('不填写',null,'other')]),
-    q('target',0,'你希望了解的对象','仅用于报告称呼，不改变评分规则。',[opt('男性',null,'male'),opt('女性',null,'female'),opt('不限 / 暂不确定',null,'any')]),
-    q('age',0,'你的年龄','年龄用于生成生活阶段和对象年龄范围，不按年龄直接扣分。',null,{type:'number',min:18,max:80,unit:'岁',default:29}),
-    q('city',0,'你的主要生活城市','收入参考分会按你选择的生活成本场景调整；这不是城市收入统计。',[opt('一线 / 高生活成本城市',null,'high'),opt('省会 / 新一线城市',null,'middle'),opt('普通地级市',null,'normal'),opt('县城 / 乡镇',null,'county')]),
-    q('height',0,'你的身高','用于外形分项。男女使用不同的演示身高参照，规则可在报告中查看。',null,{type:'number',min:130,max:210,unit:'cm',default:165}),
-    q('look',0,'你的外貌自评更接近哪一项？','不上传照片，以你自己的判断为准。',[opt('外貌普通，不太突出',55),opt('比较耐看，有个人特点',70),opt('常被评价为好看',85),opt('外形很突出',95)]),
-    q('edu',1,'你的最高学历','学历和院校标签分开；本版只按学历计分。',edu),
-    q('job',1,'你的职业状态','不按职业名称高低排序，关注是否有可持续工作。',[opt('暂未就业 / 正在转换方向',40),opt('在校，尚未进入职场',55),opt('灵活就业 / 自由职业',70),opt('有正式工作',85),opt('经营稳定的事业 / 企业',95)]),
-    q('income',1,'你的月均税后收入','按近12个月平均到手收入选，奖金折算，公积金不计入。',income),
-    q('stable',1,'收入的稳定程度','与收入水平分别计算。',[opt('波动较大，暂难预测',35),opt('有一定波动，基本能覆盖生活',60),opt('相对稳定，有应急缓冲',85),opt('稳定，且有多元收入来源',95)]),
-    q('schedule',1,'工作与生活的时间安排','衡量安排见面与共同生活的便利程度。',[opt('长期异地 / 长期出差',40),opt('经常加班或轮班',60),opt('大部分时间可提前安排',80),opt('时间规律，可持续陪伴',95)]),
-    q('savings',2,'你的个人可用积蓄','只算你能自主使用的储蓄与投资，不含父母资产。',[opt('不足1万元',30,5000),opt('1万—5万元',50,30000),opt('5万—20万元',70,100000),opt('20万—50万元',85,350000),opt('50万元以上',100,700000)]),
-    q('home',2,'你的住房情况','区分所有权、父母住房与租住安排。',[opt('暂无稳定居住安排',30,0),opt('稳定租住 / 与家人同住',55,1),opt('有明确购房计划和资金准备',70,2),opt('个人名下有房，有合理房贷',85,3),opt('个人名下有房，无房贷',100,4)]),
-    q('debt',2,'你的个人负债压力','本题不含住房按揭；住房按揭已在上一题体现。',[opt('无其他负债',100,0),opt('还款不超过月收入20%',80,1),opt('还款占月收入20%—40%',55,2),opt('超过40% / 存在逾期',25,3)]),
-    q('car',2,'你的出行条件','车的权重较低，也认可稳定可用的公共交通。',[opt('公共交通便利，不需要车',80),opt('暂无方便的出行安排',45),opt('有代步车，负担可控',85),opt('有代步车，无相关负债',95)]),
-    q('parents',2,'父母的经济保障情况','关注日常生活保障，不收集单位、收入或健康信息。',[opt('主要需要我持续提供生活费',40),opt('基本自给，偶尔需要支持',70),opt('有稳定养老金 / 收入保障',90),opt('保障充足，有一定积蓄',100)]),
-    q('familyDebt',2,'家庭的重大负债情况','只选负担程度，不需要填写具体金额。',[opt('无明显负债',100),opt('有负债，但家庭可独立承担',80),opt('需要我共同偿还，压力可控',55),opt('需要我长期承担较大压力',25)]),
-    q('support',2,'家庭能提供的婚后支持','不把父母资产直接算成你的资产。',[opt('主要靠自己建立生活',50),opt('能提供照护 / 生活方面支持',65),opt('能提供一定资金支持',80),opt('资金与生活支持都较充足',95)]),
-    q('care',2,'你承担的家庭照护责任','这是生活安排压力，不评价家庭成员的价值。',[opt('当前无固定照护责任',95),opt('偶尔协助，时间与支出较轻',80),opt('固定承担部分照护，安排可控',60),opt('需要长期投入较多时间与支出',35)]),
-    q('familyAtmosphere',2,'家庭对你婚恋决定的参与程度','重点是边界能否被尊重。',[opt('尊重我的决定，能沟通',95),opt('有意见，但最后能协商',80),opt('经常干预，沟通有难度',50),opt('强烈干预，边界难以建立',25)]),
-    q('style',3,'你的日常形象管理','穿着、整洁和仪态均可形成外形优势。',[opt('较少打理，随意为主',45),opt('基本整洁得体',70),opt('重视穿着与仪态',85),opt('有稳定的个人风格',95)]),
-    q('emotion',3,'发生矛盾时，你通常怎样处理？','按实际表现选择，不是人格诊断。',[opt('容易失控，事后也较难修复',30),opt('容易激动，但愿意回头沟通',55),opt('能暂停并重新沟通',80),opt('多数时候能稳定表达与解决',95)]),
-    q('communication',3,'表达需求与处理分歧的方式','沟通表现进入相处分项。',[opt('常靠对方猜，或长期回避',35),opt('愿意沟通，但经常说不具体',60),opt('能说清需求，也能听对方解释',85),opt('能一起协商并落实到行动',95)]),
-    q('lifestyle',3,'你的消费与日常生活习惯','按可持续程度评分，不以兴趣爱好高低排序。',[opt('经常超支，生活安排较混乱',35),opt('偶尔超支，仍在调整',60),opt('支出可控，生活较规律',85),opt('有规划，也能灵活协商',95)]),
-    q('future',3,'你目前的婚恋计划','各个明确选择同分；没有结婚意愿不会直接扣分。',[opt('希望1年内进入婚姻',90,'soon'),opt('希望1—3年内进入婚姻',90,'later'),opt('先认真交往，不急着结婚',90,'slow'),opt('明确不计划结婚',90,'none'),opt('暂未确定，需要继续梳理',65,'unsure')]),
-    q('kids',3,'你的生育想法','不参与条件评分，仅进入婚育一致性提醒。',[opt('希望有孩子',null,'yes'),opt('不希望有孩子',null,'no'),opt('尚未决定',null,'unsure')]),
-    q('ageIdeal',4,'理想型：你希望对方的年龄范围','这里填写你的偏好，不由个人分数推算。',null,{type:'range',min:18,max:80,default:[27,33],unit:'岁'}),
-    q('ageFloor',4,'底线型：你可接受的年龄范围','通常比理想范围更宽；可与理想范围相同。',null,{type:'range',min:18,max:80,default:[25,36],unit:'岁'}),
-    q('incomeIdeal',4,'理想型：对方月均税后收入','与自己的收入采用相同口径。',pIncome),
-    q('incomeFloor',4,'底线型：对方最低收入要求','填写真实可接受的门槛，不代表建议你降低要求。',pIncome),
-    q('heightIdeal',4,'理想型：对方身高要求','只用于对象画像与条件跨度分析。',pHeight),
-    q('heightFloor',4,'底线型：对方最低身高要求','可以选择不设门槛。',pHeight),
-    q('eduIdeal',4,'理想型：对方学历要求','不根据你的学历强制设定。',pEdu),
-    q('eduFloor',4,'底线型：对方最低学历要求','可以选择不设门槛。',pEdu),
-    q('homeIdeal',4,'理想型：对方住房条件','共同购房与租住均可以作为有效选择。',pHome),
-    q('homeFloor',4,'底线型：对方最低住房条件','不会推断对方的房产价格。',pHome),
-    q('cityPref',4,'你对共同生活城市的要求','同城偏好进入两种对象画像。',[opt('只接受同城，不打算迁居',null,'same'),opt('可短期异地，需有同城计划',null,'plan'),opt('可协商迁居或异地',null,'flex')]),
-    q('carePref',4,'你能接受对方多少家庭照护责任？','结合双方实际时间与资金安排讨论。',[opt('希望照护负担较轻',null,0),opt('中等负担可接受，需有分工',null,1),opt('可接受较多责任，需提前说明',null,2)])
-  ];
-
-  const neutral=(...labels)=>labels.map((label,i)=>opt(label,null,i));
-  const added=[
-    q('weight',0,'你的体重','按近期体重填写，可保留1位小数。仅用于个人档案，不计分、不据此判断健康。',null,{type:'number',min:30,max:250,step:0.1,unit:'kg',default:55,optional:true}),
-    q('body',0,'你对自己体型的描述','以自己的感受为准，不要求符合单一身材标准。',neutral('偏纤细','比较匀称','有明显运动感','偏丰腴','暂不描述')),
-    q('marital',0,'你的婚姻经历','仅整理个人情况，不给未婚或离异设置高低分。',neutral('未婚','离异','丧偶','暂不填写')),
-    q('children',0,'你目前的子女与养育安排','不填写孩子姓名、年龄或其他身份信息；本题不计分。',neutral('暂无子女','有子女，需要共同讨论养育安排','有子女，已有稳定养育安排','暂不填写')),
-    q('educationMode',1,'你的学历取得方式','学历层次与取得方式分开记录，不按取得方式扣分。',neutral('全日制','非全日制 / 成人教育','境外学习经历','其他 / 暂不填写')),
-    q('industry',1,'你主要在哪类行业工作？','不填写公司名称，行业仅用于档案和约会沟通。',neutral('公共服务 / 教育 / 医疗','金融 / 法律 / 专业服务','互联网 / 科技 / 工程','商业 / 销售 / 运营','制造 / 物流 / 建筑','文化 / 传媒 / 设计','个体经营 / 自由职业','在校 / 转换方向 / 其他')),
-    q('benefits',1,'你当前的社保与保障安排','只记录保障方式，不推断单位性质或收入高低。',neutral('单位按规定缴纳社保','以灵活就业方式缴纳','在校 / 尚未建立职场保障','暂时中断，正在安排','暂不填写')),
-    q('monthlySpend',2,'你每月固定支出大致是多少？','包含租金或房贷、日常消费、还款和固定家庭支持，按近3个月平均。仅用于预算沟通。',neutral('3千以下','3千—6千','6千—1万','1万—1.5万','1.5万以上','暂不填写')),
-    q('homeOwnership',2,'如果涉及住房，产权与共同投入如何安排？','父母房产不等同于个人产权；不需要填写地址或房价。',neutral('个人产权，愿意说明房贷与产权情况','与父母 / 家人共有，需讨论居住安排','共同购房，投入与产权需书面说清','目前租住，先讨论预算与地点','暂不确定 / 不适用')),
-    q('siblings',2,'你的兄弟姐妹与家庭责任情况','不按独生与否评分，关注责任能否提前沟通。',neutral('独生子女','有兄弟姐妹，责任分工较明确','有兄弟姐妹，需要进一步协调责任','暂不填写')),
-    q('livingParents',2,'你目前与父母的居住安排','仅记录现实安排，独住与同住不设置高低分。',neutral('独立居住','与父母同住','阶段性同住，未来可协商','因照护责任需要就近居住','暂不填写')),
-    q('smoke',3,'你的吸烟习惯','包括电子烟；用于讨论日常边界，不作健康诊断。',neutral('不吸烟','偶尔吸烟','经常吸烟','正在减少 / 戒烟','暂不填写')),
-    q('drink',3,'你的饮酒习惯','按实际频率和对生活的影响选择，本题不计分。',neutral('不饮酒','社交场合偶尔少量饮酒','较频繁，但会控制影响','有时影响作息或相处，正在调整','暂不填写')),
-    q('exercise',3,'你的运动与休闲节奏','没有固定运动习惯也可如实填写，不据此评价身材。',neutral('每周3次以上运动','每周1—2次运动','散步 / 日常活动为主','较少运动，偏静态休闲','暂不填写')),
-    q('sleep',3,'你的日常作息更接近哪一种？','用于发现共同生活的节奏差异，轮班并不等于缺乏自律。',neutral('早睡早起，比较规律','晚睡晚起，比较规律','工作轮班 / 出差导致不固定','作息波动，正在调整','暂不填写')),
-    q('housework',3,'你期待怎样分担家务？','可以按时间、能力或请人协助分工，重点是双方认可。',neutral('双方按可支配时间共同承担','轮流 / 按清单分工','愿意承担较多，对方承担其他责任','倾向请人协助，预算共同商量','还没有想好')),
-    q('budget',3,'共同生活的钱，你希望怎样管理？','不同方式不分高低；重大支出与债务仍需透明沟通。',neutral('各自管理，共同支出按比例分担','设共同账户，保留个人账户','集中管理，双方都有知情与决策权','收入差异下，按能力协商承担','还需要进一步讨论')),
-    q('pet',3,'你与宠物共同生活的态度','用于整理居住偏好，不填写疾病或过敏等医疗信息。',neutral('目前有宠物，希望继续共同生活','喜欢宠物，未来可以养','可接受，需先商量照料与空间','不希望共同居所养宠物','尚未决定')),
-    q('brideBudget',4,'对彩礼、嫁妆与婚礼支出，你更看重什么？','不预设由哪一方承担，也不推断所在地风俗。',neutral('量力而行，避免为仪式举债','结合家庭习俗，明确金额与用途','优先作为小家庭启动资金','希望简办或不设彩礼嫁妆','尚未讨论，需要双方沟通')),
-    q('boundaries',4,'与朋友、前任和家人相处时，你怎样看待边界？','关注是否协商一致，不以查手机或限制正常社交衡量忠诚。',neutral('尊重正常社交，重要安排提前说明','愿意协商具体边界，双方同样遵守','目前容易产生分歧，需要更多沟通','暂未形成明确想法')),
-    q('conflictRepair',4,'发生争执之后，你会怎样修复？','按最近的真实表现选择；与表达需求分开，进入相处分项。',[opt('很少回顾，通常等事情过去',35),opt('会道歉，但同类问题容易重复',60),opt('愿意回顾原因，约定下次怎么做',85),opt('能落实约定，也允许对方提出反馈',95)]),
-    q('bodyIdeal',5,'理想型：你对对方体型的偏好','偏好来自你自己；不根据体重推算对方是否适合。',neutral('不设具体体型偏好','偏纤细','比较匀称','有运动感','偏丰腴')),
-    q('bodyFloor',5,'底线型：体型是否是硬性条件？','最低可接受条件不必是一个体重数字。',neutral('不设体型门槛','希望与理想型偏好一致','有眼缘即可，不限制体型')),
-    q('maritalIdeal',5,'理想型：你对对方婚姻经历的接受范围','不评价不同经历的价值，仅整理你的接受范围。',neutral('不限制婚姻经历','仅未婚','未婚或离异','未婚或丧偶')),
-    q('maritalFloor',5,'底线型：婚姻经历的接受范围','可接受范围应包含理想范围。',neutral('不限制婚姻经历','仅未婚','未婚或离异','未婚或丧偶')),
-    q('smokePref',5,'对方吸烟，你能接受到什么程度？','这是共同生活边界，会直接进入两列对象画像。',neutral('不接受吸烟或电子烟','可接受偶尔吸烟，约定场所','可以接受，需尊重彼此边界','没有明确要求')),
-    q('drinkPref',5,'对方饮酒，你最在意哪一点？','选择真实可接受的边界。',neutral('希望不饮酒','可接受少量社交饮酒','频率可协商，不影响相处和责任','没有明确要求')),
-    q('livingPref',5,'婚后与父母的居住安排，你的底线是什么？','分别讨论同住、就近照护与短期协助，避免只用家庭标签判断。',neutral('希望独立居住，不长期同住','可以就近居住，不在同一住所','可阶段性同住，需有期限与边界','可以长期同住，分工先说清','视照护责任共同商量')),
-    q('houseworkPref',5,'你希望对方怎样参与家务和育儿？','不预设某一性别承担更多；重点是实际分工。',neutral('必须主动参与，分工可协商','按双方时间和工作强度分担','可请人协助，但双方仍共同负责','希望与我的家务分工想法一致','还需要一起讨论')),
-    q('budgetPref',5,'你对对方的财务沟通底线是什么？','不要求公开所有私人消费，但重大责任应能说明。',neutral('重大负债、家庭支出与预算如实沟通','共同支出明确，个人财务保留空间','希望双方共同规划储蓄与大额支出','需要共同商量具体规则')),
-    q('petPref',5,'你对共同居所养宠物的要求','与个人宠物态度分别记录。',neutral('希望接受我现有或未来的宠物','可以养，空间和照料先商量','不希望共同居所养宠物','没有明确要求')),
-    q('childPref',5,'你是否接受对方已有子女？','涉及现有养育责任，应讨论照料、资金和边界；本题不计分。',neutral('可以接受，先明确养育责任','希望对方暂无子女','视具体相处与养育安排决定','尚未确定'))
-  ];
-  for(const item of questions){
-    if(item.group===4)item.group=5;
-    else if(item.group===3)item.group=['style','lifestyle'].includes(item.id)?3:4;
-  }
-  questions.push(...added);
-  questions.push(
-    q('employer',1,'你的单位或工作组织形式','记录工作环境，不按单位标签高低排序。',neutral('机关 / 事业单位','国有企业','民营企业','外资 / 合资企业','个体经营 / 自由职业','在校 / 暂未就业 / 其他')),
-    q('jobLevel',1,'你目前的职业阶段','用于说明职责与时间安排，不以职级直接加减分。',neutral('在校 / 刚进入职场','业务执行 / 专业岗位','资深专业人员 / 项目负责人','团队管理','自主经营 / 合伙人','转换方向 / 其他'))
-  );
-  questions.sort((a,b)=>a.group-b.group);
-
-  const dimensions=[
-    {id:'stage',name:'婚育节奏',weight:5,keys:['future']},
-    {id:'appearance',name:'外形条件',weight:13,keys:['height','look','style']},
-    {id:'education',name:'教育背景',weight:10,keys:['edu']},
-    {id:'career',name:'职业稳定',weight:12,keys:['job','stable','schedule']},
-    {id:'income',name:'收入条件',weight:17,keys:['income']},
-    {id:'assets',name:'个人资产',weight:15,keys:['savings','home','debt','car']},
-    {id:'family',name:'家庭支持',weight:10,keys:['parents','familyDebt','support','familyAtmosphere']},
-    {id:'care',name:'照护压力',weight:8,keys:['care']},
-    {id:'relationship',name:'相处表现',weight:10,keys:['emotion','communication','lifestyle','conflictRepair']}
-  ];
-  const data={questions,dimensions,groups:['基础画像','教育与事业','资产与家庭','生活习惯','相处与婚育','理想与底线'],version:'2.0.0'};
-  root.XiangyuData=data;
-  if(typeof module!=='undefined') module.exports=data;
-})(typeof window!=='undefined'?window:globalThis);
+(function(root){const data={
+  "questions": [
+    {
+      "id": "gender",
+      "group": 0,
+      "title": "你的性别",
+      "description": "用于个人画像，不参与加减分。",
+      "options": [
+        {
+          "label": "女性",
+          "score": null,
+          "value": "female"
+        },
+        {
+          "label": "男性",
+          "score": null,
+          "value": "male"
+        },
+        {
+          "label": "不填写",
+          "score": null,
+          "value": "other"
+        }
+      ]
+    },
+    {
+      "id": "target",
+      "group": 0,
+      "title": "你希望了解的对象",
+      "description": "仅用于报告称呼，不改变评分规则。",
+      "options": [
+        {
+          "label": "男性",
+          "score": null,
+          "value": "male"
+        },
+        {
+          "label": "女性",
+          "score": null,
+          "value": "female"
+        },
+        {
+          "label": "不限 / 暂不确定",
+          "score": null,
+          "value": "any"
+        }
+      ]
+    },
+    {
+      "id": "age",
+      "group": 0,
+      "title": "你的年龄",
+      "description": "年龄用于生成生活阶段和对象年龄范围，不按年龄直接扣分。",
+      "options": null,
+      "type": "number",
+      "min": 18,
+      "max": 80,
+      "unit": "岁",
+      "default": 29
+    },
+    {
+      "id": "city",
+      "group": 0,
+      "title": "你的主要生活城市",
+      "description": "用于收入条件的生活成本场景，不采集具体城市。",
+      "options": [
+        {
+          "label": "一线 / 高生活成本城市",
+          "score": null,
+          "value": "high"
+        },
+        {
+          "label": "省会 / 新一线城市",
+          "score": null,
+          "value": "middle"
+        },
+        {
+          "label": "普通地级市",
+          "score": null,
+          "value": "normal"
+        },
+        {
+          "label": "县城 / 乡镇",
+          "score": null,
+          "value": "county"
+        }
+      ]
+    },
+    {
+      "id": "height",
+      "group": 0,
+      "title": "你的身高",
+      "description": "用于你的条件卡和外形亮点，不以身高判断一个人的价值。",
+      "options": null,
+      "type": "number",
+      "min": 130,
+      "max": 210,
+      "unit": "cm",
+      "default": 165
+    },
+    {
+      "id": "weight",
+      "group": 0,
+      "title": "你的体重",
+      "description": "按近期体重填写，可保留1位小数。仅用于个人档案，不计分、不据此判断健康。",
+      "options": null,
+      "type": "number",
+      "min": 30,
+      "max": 250,
+      "step": 0.1,
+      "unit": "kg",
+      "default": 55,
+      "optional": true
+    },
+    {
+      "id": "look",
+      "group": 0,
+      "title": "你的外貌自评更接近哪一项？",
+      "description": "不上传照片，以你自己的判断为准。",
+      "options": [
+        {
+          "label": "外貌普通，不太突出",
+          "score": 55,
+          "value": 55
+        },
+        {
+          "label": "比较耐看，有个人特点",
+          "score": 70,
+          "value": 70
+        },
+        {
+          "label": "常被评价为好看",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "外形很突出",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "edu",
+      "group": 1,
+      "title": "你的最高学历",
+      "description": "学历和院校标签分开；本版只按学历计分。",
+      "options": [
+        {
+          "label": "高中 / 中专及以下",
+          "score": 40,
+          "value": 0
+        },
+        {
+          "label": "大专",
+          "score": 55,
+          "value": 1
+        },
+        {
+          "label": "本科",
+          "score": 75,
+          "value": 2
+        },
+        {
+          "label": "硕士",
+          "score": 90,
+          "value": 3
+        },
+        {
+          "label": "博士",
+          "score": 100,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "job",
+      "group": 1,
+      "title": "你的职业状态",
+      "description": "不按职业名称高低排序，关注是否有可持续工作。",
+      "options": [
+        {
+          "label": "暂未就业 / 正在转换方向",
+          "score": 40,
+          "value": 40
+        },
+        {
+          "label": "在校，尚未进入职场",
+          "score": 55,
+          "value": 55
+        },
+        {
+          "label": "灵活就业 / 自由职业",
+          "score": 70,
+          "value": 70
+        },
+        {
+          "label": "有正式工作",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "经营稳定的事业 / 企业",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "income",
+      "group": 1,
+      "title": "你的月均税后收入",
+      "description": "按近12个月平均到手收入选，奖金折算，公积金不计入。",
+      "options": [
+        {
+          "label": "5千以下",
+          "score": 35,
+          "value": 3500
+        },
+        {
+          "label": "5千—8千",
+          "score": 50,
+          "value": 6500
+        },
+        {
+          "label": "8千—1.2万",
+          "score": 65,
+          "value": 10000
+        },
+        {
+          "label": "1.2万—2万",
+          "score": 80,
+          "value": 16000
+        },
+        {
+          "label": "2万—3万",
+          "score": 90,
+          "value": 25000
+        },
+        {
+          "label": "3万以上",
+          "score": 100,
+          "value": 40000
+        }
+      ]
+    },
+    {
+      "id": "savings",
+      "group": 1,
+      "title": "你的个人可用积蓄",
+      "description": "只算你能自主使用的储蓄与投资，不含父母资产。",
+      "options": [
+        {
+          "label": "不足1万元",
+          "score": 30,
+          "value": 5000
+        },
+        {
+          "label": "1万—5万元",
+          "score": 50,
+          "value": 30000
+        },
+        {
+          "label": "5万—20万元",
+          "score": 70,
+          "value": 100000
+        },
+        {
+          "label": "20万—50万元",
+          "score": 85,
+          "value": 350000
+        },
+        {
+          "label": "50万元以上",
+          "score": 100,
+          "value": 700000
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "group": 1,
+      "title": "你的住房情况",
+      "description": "区分所有权、父母住房与租住安排。",
+      "options": [
+        {
+          "label": "暂无稳定居住安排",
+          "score": 30,
+          "value": 0
+        },
+        {
+          "label": "稳定租住 / 与家人同住",
+          "score": 55,
+          "value": 1
+        },
+        {
+          "label": "有明确购房计划和资金准备",
+          "score": 70,
+          "value": 2
+        },
+        {
+          "label": "个人名下有房，有合理房贷",
+          "score": 85,
+          "value": 3
+        },
+        {
+          "label": "个人名下有房，无房贷",
+          "score": 100,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "group": 1,
+      "title": "家庭能提供的婚后支持",
+      "description": "不把父母资产直接算成你的资产。",
+      "options": [
+        {
+          "label": "主要靠自己建立生活",
+          "score": 50,
+          "value": 50
+        },
+        {
+          "label": "能提供照护 / 生活方面支持",
+          "score": 65,
+          "value": 65
+        },
+        {
+          "label": "能提供一定资金支持",
+          "score": 80,
+          "value": 80
+        },
+        {
+          "label": "资金与生活支持都较充足",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "communication",
+      "group": 1,
+      "title": "表达需求与处理分歧的方式",
+      "description": "沟通表现进入相处分项。",
+      "options": [
+        {
+          "label": "常靠对方猜，或长期回避",
+          "score": 35,
+          "value": 35
+        },
+        {
+          "label": "愿意沟通，但经常说不具体",
+          "score": 60,
+          "value": 60
+        },
+        {
+          "label": "能说清需求，也能听对方解释",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "能一起协商并落实到行动",
+          "score": 95,
+          "value": 95
+        }
+      ]
+    },
+    {
+      "id": "ageIdeal",
+      "group": 2,
+      "title": "理想型：你希望对方的年龄范围",
+      "description": "这里填写你的偏好，不由个人分数推算。",
+      "options": null,
+      "type": "range",
+      "min": 18,
+      "max": 80,
+      "default": [
+        27,
+        33
+      ],
+      "unit": "岁"
+    },
+    {
+      "id": "ageFloor",
+      "group": 2,
+      "title": "底线型：你可接受的年龄范围",
+      "description": "通常比理想范围更宽；可与理想范围相同。",
+      "options": null,
+      "type": "range",
+      "min": 18,
+      "max": 80,
+      "default": [
+        25,
+        36
+      ],
+      "unit": "岁"
+    },
+    {
+      "id": "incomeIdeal",
+      "group": 2,
+      "title": "理想型：对方月均税后收入",
+      "description": "与自己的收入采用相同口径。",
+      "options": [
+        {
+          "label": "不设收入门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "5千以上",
+          "score": null,
+          "value": 5000
+        },
+        {
+          "label": "8千以上",
+          "score": null,
+          "value": 8000
+        },
+        {
+          "label": "1万以上",
+          "score": null,
+          "value": 10000
+        },
+        {
+          "label": "1.5万以上",
+          "score": null,
+          "value": 15000
+        },
+        {
+          "label": "2万以上",
+          "score": null,
+          "value": 20000
+        },
+        {
+          "label": "3万以上",
+          "score": null,
+          "value": 30000
+        }
+      ]
+    },
+    {
+      "id": "incomeFloor",
+      "group": 2,
+      "title": "底线型：对方最低收入要求",
+      "description": "填写真实可接受的门槛，不代表建议你降低要求。",
+      "options": [
+        {
+          "label": "不设收入门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "5千以上",
+          "score": null,
+          "value": 5000
+        },
+        {
+          "label": "8千以上",
+          "score": null,
+          "value": 8000
+        },
+        {
+          "label": "1万以上",
+          "score": null,
+          "value": 10000
+        },
+        {
+          "label": "1.5万以上",
+          "score": null,
+          "value": 15000
+        },
+        {
+          "label": "2万以上",
+          "score": null,
+          "value": 20000
+        },
+        {
+          "label": "3万以上",
+          "score": null,
+          "value": 30000
+        }
+      ]
+    },
+    {
+      "id": "heightIdeal",
+      "group": 2,
+      "title": "理想型：对方身高要求",
+      "description": "只用于对象画像与条件跨度分析。",
+      "options": [
+        {
+          "label": "不设身高门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "155cm以上",
+          "score": null,
+          "value": 155
+        },
+        {
+          "label": "160cm以上",
+          "score": null,
+          "value": 160
+        },
+        {
+          "label": "165cm以上",
+          "score": null,
+          "value": 165
+        },
+        {
+          "label": "170cm以上",
+          "score": null,
+          "value": 170
+        },
+        {
+          "label": "175cm以上",
+          "score": null,
+          "value": 175
+        },
+        {
+          "label": "180cm以上",
+          "score": null,
+          "value": 180
+        },
+        {
+          "label": "185cm以上",
+          "score": null,
+          "value": 185
+        }
+      ]
+    },
+    {
+      "id": "heightFloor",
+      "group": 2,
+      "title": "底线型：对方最低身高要求",
+      "description": "可以选择不设门槛。",
+      "options": [
+        {
+          "label": "不设身高门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "155cm以上",
+          "score": null,
+          "value": 155
+        },
+        {
+          "label": "160cm以上",
+          "score": null,
+          "value": 160
+        },
+        {
+          "label": "165cm以上",
+          "score": null,
+          "value": 165
+        },
+        {
+          "label": "170cm以上",
+          "score": null,
+          "value": 170
+        },
+        {
+          "label": "175cm以上",
+          "score": null,
+          "value": 175
+        },
+        {
+          "label": "180cm以上",
+          "score": null,
+          "value": 180
+        },
+        {
+          "label": "185cm以上",
+          "score": null,
+          "value": 185
+        }
+      ]
+    },
+    {
+      "id": "eduIdeal",
+      "group": 2,
+      "title": "理想型：对方学历要求",
+      "description": "不根据你的学历强制设定。",
+      "options": [
+        {
+          "label": "不设学历门槛",
+          "score": null,
+          "value": -1
+        },
+        {
+          "label": "高中 / 中专及以下及以上",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "大专及以上",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "本科及以上",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "硕士及以上",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "博士及以上",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "eduFloor",
+      "group": 2,
+      "title": "底线型：对方最低学历要求",
+      "description": "可以选择不设门槛。",
+      "options": [
+        {
+          "label": "不设学历门槛",
+          "score": null,
+          "value": -1
+        },
+        {
+          "label": "高中 / 中专及以下及以上",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "大专及以上",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "本科及以上",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "硕士及以上",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "博士及以上",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "homeIdeal",
+      "group": 2,
+      "title": "理想型：对方住房条件",
+      "description": "共同购房与租住均可以作为有效选择。",
+      "options": [
+        {
+          "label": "不设住房门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "能独立承担租住",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "有共同购房计划",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "有房，可接受合理房贷",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "有房且无房贷",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "homeFloor",
+      "group": 2,
+      "title": "底线型：对方最低住房条件",
+      "description": "不会推断对方的房产价格。",
+      "options": [
+        {
+          "label": "不设住房门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "能独立承担租住",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "有共同购房计划",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "有房，可接受合理房贷",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "有房且无房贷",
+          "score": null,
+          "value": 4
+        }
+      ]
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "appearance",
+      "name": "外形亮点",
+      "weight": 15,
+      "keys": [
+        "height",
+        "look"
+      ]
+    },
+    {
+      "id": "education",
+      "name": "学历亮点",
+      "weight": 15,
+      "keys": [
+        "edu"
+      ]
+    },
+    {
+      "id": "career",
+      "name": "事业潜力",
+      "weight": 10,
+      "keys": [
+        "job"
+      ]
+    },
+    {
+      "id": "income",
+      "name": "收入实力",
+      "weight": 15,
+      "keys": [
+        "income"
+      ]
+    },
+    {
+      "id": "assets",
+      "name": "生活底气",
+      "weight": 15,
+      "keys": [
+        "savings",
+        "home"
+      ]
+    },
+    {
+      "id": "family",
+      "name": "家庭支持",
+      "weight": 10,
+      "keys": [
+        "support"
+      ]
+    },
+    {
+      "id": "relationship",
+      "name": "相处魅力",
+      "weight": 20,
+      "keys": [
+        "communication"
+      ]
+    }
+  ],
+  "groups": [
+    "基础名片",
+    "实力与魅力",
+    "理想与底线"
+  ],
+  "version": "3.0.0"
+};root.XiangyuData=data;if(typeof module!=="undefined")module.exports=data;})(typeof window!=="undefined"?window:globalThis);
