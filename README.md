@@ -7,3 +7,6 @@
 答卷仅存当前浏览器会话，不上传服务器。Noto Sans SC 字体依 SIL OFL 1.1 自托管，版权许可保存在 FONT-NOTICE.md 和 OFL-NotoSansSC.txt。
 
 GitHub Pages 仍为 main 根目录免费演示，未实现支付。
+
+视觉为原创水彩花园和云朵动画，页面支持关闭动画，默认尊重系统减少动态效果设置；资源记录见 VISUAL-ASSETS.md。
+
