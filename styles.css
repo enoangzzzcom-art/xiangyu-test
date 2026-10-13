@@ -77,3 +77,10 @@ body{background:radial-gradient(ellipse at 15% 12%,#f5edf6,transparent 36%),radi
 
 /* Keep answer selection still: change only color and selection mark. */
 .option:hover,.option:active{transform:none!important}.option.selected .radio:after{animation:none!important}.option{transition:background-color .16s,border-color .16s,color .16s}
+
+/* A more prominent cover identity; keep questionnaire header compact. */
+body[data-view="home"] .header{height:112px}
+body[data-view="home"] .brand{font-size:36px;gap:12px;letter-spacing:5px}
+body[data-view="home"] .brand-symbol{width:56px;height:56px}
+.marriage-plans{max-width:100%}
+@media(max-width:600px){body[data-view="home"] .header{height:104px;padding:19px 22px}body[data-view="home"] .brand{font-size:32px;gap:10px;letter-spacing:5px}body[data-view="home"] .brand-symbol{width:48px;height:48px}}

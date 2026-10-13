@@ -218,12 +218,22 @@
           "value": 55
         },
         {
-          "label": "灵活就业 / 自由职业",
+          "label": "自由职业 / 灵活就业",
           "score": 70,
           "value": 70
         },
         {
-          "label": "有正式工作",
+          "label": "企业职员 / 合同制工作",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "公务员 / 事业单位在编",
+          "score": 85,
+          "value": 85
+        },
+        {
+          "label": "国企 / 央企正式员工",
           "score": 85,
           "value": 85
         },
@@ -363,6 +373,43 @@
           "label": "资金与生活支持都较充足",
           "score": 95,
           "value": 95
+        }
+      ]
+    },
+    {
+      "id": "familyAssets",
+      "group": 1,
+      "title": "你的家庭净资产（含房产、扣除债务）",
+      "options": [
+        {
+          "label": "100万元以下",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "100万—300万元",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "300万—500万元",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "500万—1000万元",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "1000万元以上",
+          "score": null,
+          "value": 4
+        },
+        {
+          "label": "暂不清楚 / 不填写",
+          "score": null,
+          "value": 5
         }
       ]
     },
@@ -624,7 +671,7 @@
           "value": -1
         },
         {
-          "label": "高中 / 中专及以下及以上",
+          "label": "高中 / 中专及以上",
           "score": null,
           "value": 0
         },
@@ -680,6 +727,250 @@
           "label": "有房且无房贷",
           "score": null,
           "value": 4
+        }
+      ]
+    },
+    {
+      "id": "cityIdeal",
+      "group": 2,
+      "title": "你希望对象在哪座城市生活？",
+      "options": [
+        {
+          "label": "必须同城",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "可以异地，未来能到我的城市",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "可以异地，我也愿意迁居",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "可以一起选择新的城市",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "不设城市要求",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "jobIdeal",
+      "group": 2,
+      "title": "你对对象的工作有什么期待？",
+      "options": [
+        {
+          "label": "不设职业门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "有稳定工作即可",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "更倾向公务员 / 事业单位在编",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "更倾向国企 / 央企正式员工",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "更看重企业发展与收入",
+          "score": null,
+          "value": 4
+        },
+        {
+          "label": "接受自由职业 / 创业",
+          "score": null,
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "familyAssetsIdeal",
+      "group": 2,
+      "title": "你期待对象的家庭净资产",
+      "options": [
+        {
+          "label": "不设家庭资产门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "100万元以上",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "300万元以上",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "500万元以上",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "1000万元以上",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "familyIdeal",
+      "group": 2,
+      "title": "你期待对象的家庭情况",
+      "options": [
+        {
+          "label": "不设家庭条件门槛",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "父母能基本自给，家庭无重大负债",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "家庭和睦，尊重小家庭的边界",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "能提供一定购房 / 生活支持",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "经济条件较好，支持比较充足",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "kids",
+      "group": 2,
+      "title": "你的生育计划",
+      "options": [
+        {
+          "label": "希望有一个孩子",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "希望有两个或更多孩子",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "想先过二人生活，以后再决定",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "倾向不生育",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "暂未决定，愿意一起商量",
+          "score": null,
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "marriageFinance",
+      "group": 2,
+      "title": "你希望婚后的生活开支怎么安排？",
+      "options": [
+        {
+          "label": "双方继续工作，共同承担",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "按收入比例分担",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "各自管理收入，共同开支 AA",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "希望对方主要承担生活费",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "我愿意主要承担生活费",
+          "score": null,
+          "value": 4
+        },
+        {
+          "label": "一方专注家庭，另一方负责收入",
+          "score": null,
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "bridePrice",
+      "group": 2,
+      "title": "你计划给出或接受的彩礼金额",
+      "options": [
+        {
+          "label": "不安排彩礼",
+          "score": null,
+          "value": 0
+        },
+        {
+          "label": "以心意为主，5万元以内",
+          "score": null,
+          "value": 1
+        },
+        {
+          "label": "5万—10万元",
+          "score": null,
+          "value": 2
+        },
+        {
+          "label": "10万—20万元",
+          "score": null,
+          "value": 3
+        },
+        {
+          "label": "20万—30万元",
+          "score": null,
+          "value": 4
+        },
+        {
+          "label": "30万元以上",
+          "score": null,
+          "value": 5
+        },
+        {
+          "label": "暂未决定，双方协商",
+          "score": null,
+          "value": 6
         }
       ]
     }
@@ -754,5 +1045,5 @@
     "实力与相处",
     "我的理想对象"
   ],
-  "version": "3.1.0"
+  "version": "3.2.0"
 };root.XiangyuData=data;if(typeof module!=="undefined")module.exports=data;})(typeof window!=="undefined"?window:globalThis);
